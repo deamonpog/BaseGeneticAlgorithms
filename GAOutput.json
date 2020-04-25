@@ -1,0 +1,11 @@
+{
+"ExperimentData":{},
+"RunData":{
+	"Columns":["RunNumber","GenerationNumber","AvgFitness","BestFitness","StdevFitness"],
+	"Data":[
+				[0, 0, 123, 150, 100],
+				[50, 100, 175, 200, 10]
+			]	
+},
+"Summary":{}
+}
