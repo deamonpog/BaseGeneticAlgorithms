@@ -1,5 +1,7 @@
 from random_number_generator import RandomNumberGenerator as RNG
 from output_processor import OutputProcessor
+from utils import Utilities
+import pandas as pd
 
 class GeneticAlgorithm:
     class SelectionStrategy:
@@ -26,10 +28,6 @@ class GeneticAlgorithm:
             self.CrossoverProbability = in_ParameterDict['XoverProb']
             self.OutputFile = in_ParameterDict['OutputFile']
 
-    def ComputeMaxMinMeanStdev(in_Population):
-        for 
-
-
     def __init__(self, in_GenotypeModel, in_ParameterDict):
         self.TheGenotypeModel = in_GenotypeModel
         self.Parameters = GeneticAlgorithm.Parameters(in_ParameterDict)
@@ -49,16 +47,15 @@ class GeneticAlgorithm:
         ExperimentData = {'GAParameters':self.Parameters.ToParamDict(),'Runs':[]}
 
         self.OutputProcessor.Record(0, self.Population)
-        bestFitness = None
-        avgFitness = None
-        stdevFitness = None
-        bestChromosome = []
+        RunData = []
+        allRunsStats = Utilities.StatCalculator()
+        allRunsStats.AddRecordsBatch(lambda x: x.GetRawFitness(), self.Population)
 
         # Main Loop of Generations
         for runNo in range(self.Parameters.NumberOfRuns):
-            RunData = []
             for currentGeneration in range(self.Parameters.NumGenerations):
                 newPopulation = []
+                generationStats = Utilities.StatCalculator()
                 for pairs in range(self.Parameters.ChildrenPerGeneration // 2):
                     # Selection of Parents
                     parentObject1 = self.TheSelectionStrategy.SelectChromosomeObject()
@@ -81,14 +78,23 @@ class GeneticAlgorithm:
                     newPopulation.append(childObject1)
                     newPopulation.append(childObject2)
 
-                    if bestFitness < childObject1.GetRawFitness():
-                        bestFitness = childObject1.GetRawFitness()
-                        bestChromosome = childObject1.DeepCopy()
-                    if bestFitness < childObject2.GetRawFitness():
-                        bestFitness = childObject2.GetRawFitness()
-                        bestChromosome = childObject1.DeepCopy()
+                    generationStats.AddRecord(childObject1.GetRawFitness(), childObject1)
+                    generationStats.AddRecord(childObject2.GetRawFitness(), childObject2)
+                    allRunsStats.AddRecord(childObject1.GetRawFitness(), childObject1)
+                    allRunsStats.AddRecord(childObject2.GetRawFitness(), childObject2)
+
+                    # end for each children loop
+
+                RunData.append( (runNo, currentGeneration) + generationStats.GetStats() )
                 self.Population = newPopulation
+
             # end of generations loop
         # end of runs loop
-        print(bestFitness)
-        print(bestChromosome.GetChromosome())
+        df = pd.DataFrame(RunData,columns=['RunNo','GenerationNumber','NumberOfSamples','Min','MinIndex','Max','MaxIndex','Mean','Stdev'])
+        df.to_csv('Test.csv')
+        minChromObj = allRunsStats.GetMinObject()
+        maxChromObj = allRunsStats.GetMaxObject()
+        print('Min Fitness: ' + str(minChromObj.GetRawFitness()))
+        print(minChromObj.GetChromosome())
+        print('Max Fitness: ' + str(maxChromObj.GetRawFitness()))
+        print(maxChromObj.GetChromosome())
