@@ -14,23 +14,19 @@ class GeneticAlgorithm:
 
     class Parameters:
         def __init__(self, in_ParameterDict):
-            self.FromParamDict(in_ParameterDict)
+            self.FromDict(in_ParameterDict)
 
-        def ToParamDict(self):
+        def ToDict(self):
             return {'NumRuns':self.NumberOfRuns,'NumGenerations':self.NumGenerations,'PopSize':self.PopSize,\
                     'ChildrenPerGeneration':self.ChildrenPerGeneration,'XoverProb':self.CrossoverProbability,'OutputFile':self.OutputFile}
 
-        def FromParamDict(self,in_ParameterDict):
+        def FromDict(self,in_ParameterDict):
             self.NumberOfRuns = in_ParameterDict['NumRuns']
             self.NumGenerations = in_ParameterDict['NumGenerations']
             self.PopSize = in_ParameterDict['PopSize']
             self.ChildrenPerGeneration = in_ParameterDict['ChildrenPerGeneration'] if 'ChildrenPerGeneration' in in_ParameterDict.keys() else in_ParameterDict['PopSize']
             self.CrossoverProbability = in_ParameterDict['XoverProb']
             self.OutputFile = in_ParameterDict['OutputFile']
-
-        def ToDict(self):
-            return {'NumRuns':self.NumberOfRuns,'NumGenerations':self.NumGenerations,\
-                'PopSize':self.PopSize,'ChildrenPerGeneration':self.ChildrenPerGeneration,'XoverProb':self.CrossoverProbability,'OutputFile':self.OutputFile}
 
     def __init__(self, in_GenotypeModel, in_ParameterDict):
         self.TheGenotypeModel = in_GenotypeModel
@@ -48,7 +44,7 @@ class GeneticAlgorithm:
     def Run(self):
         # Initialization
         self.Population = [ self.TheGenotypeModel.CreateRandomizedChromosomeObject() for i in range(self.Parameters.PopSize) ]
-        ExperimentData = {'GAParameters':self.Parameters.ToParamDict(),'Runs':[]}
+        ExperimentData = {'GAParameters':self.Parameters.ToDict(),'Runs':[]}
 
         self.OutputProcessor.Record(0, self.Population)
         f = open(self.Parameters.OutputFile, 'w')
