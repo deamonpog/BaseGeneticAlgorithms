@@ -1,7 +1,7 @@
 from random_number_generator import RandomNumberGenerator as RNG
 from output_processor import OutputProcessor
 from utils import Utilities
-import pandas as pd
+import json
 
 class GeneticAlgorithm:
     class SelectionStrategy:
@@ -28,6 +28,10 @@ class GeneticAlgorithm:
             self.CrossoverProbability = in_ParameterDict['XoverProb']
             self.OutputFile = in_ParameterDict['OutputFile']
 
+        def ToDict(self):
+            return {'NumRuns':self.NumberOfRuns,'NumGenerations':self.NumGenerations,\
+                'PopSize':self.PopSize,'ChildrenPerGeneration':self.ChildrenPerGeneration,'XoverProb':self.CrossoverProbability,'OutputFile':self.OutputFile}
+
     def __init__(self, in_GenotypeModel, in_ParameterDict):
         self.TheGenotypeModel = in_GenotypeModel
         self.Parameters = GeneticAlgorithm.Parameters(in_ParameterDict)
@@ -47,8 +51,8 @@ class GeneticAlgorithm:
         ExperimentData = {'GAParameters':self.Parameters.ToParamDict(),'Runs':[]}
 
         self.OutputProcessor.Record(0, self.Population)
-        f = open(self.OutputFile, 'w')
-        f.write('{\n"ExperimentData":{},\n"RunData":{\n\t"Columns":["RunNumber","GenerationNumber","AvgFitness","BestFitness","StdevFitness"],\n\t"Data":[\n')
+        f = open(self.Parameters.OutputFile, 'w')
+        f.write('{\n"ExperimentData":' + json.dumps(self.Parameters.ToDict()) + ',\n"RunData":{\n\t"Columns":["RunNumber","GenerationNumber","AvgFitness","BestFitness","StdevFitness"],\n\t"Data":[\n')
         RunData = []
         allRunsStats = Utilities.StatCalculator()
         allRunsStats.AddRecordsBatch(lambda x: x.GetRawFitness(), self.Population)
@@ -91,12 +95,15 @@ class GeneticAlgorithm:
                 self.Population = newPopulation
             # end of generations loop
         # end of runs loop
-        df = pd.DataFrame(RunData,columns=['RunNo','GenerationNumber','Min','Max','Mean','Stdev'])
-        df.to_csv('ga__runData.csv')
+        for data in RunData[:-1]:
+            f.write('\t\t\t[{},{},{},{},{}],\n'.format(data[0],data[1],data[2],data[3],data[4],data[5]))
+        data = RunData[-1]
+        f.write('\t\t\t[{},{},{},{},{}]\n'.format(data[0],data[1],data[2],data[3],data[4],data[5]))
         minChromObj = allRunsStats.GetMinObject()
         maxChromObj = allRunsStats.GetMaxObject()
         print('Min Fitness: ' + str(minChromObj.GetRawFitness()))
         print(minChromObj.GetChromosome())
         print('Max Fitness: ' + str(maxChromObj.GetRawFitness()))
         print(maxChromObj.GetChromosome())
+        f.write('\t\t]\n\t}},\n"Summary":{{\n\t"OverallMinFitness":{},\n\t"OverallMaxChromosome":{},\n\t"OverallMaxFitness":{},\n\t"OverallMinChromosome":{}\n\t}}\n}}\n'.format(minChromObj.GetRawFitness(),minChromObj.GetChromosome(),maxChromObj.GetRawFitness(),maxChromObj.GetChromosome()))
         f.close()
