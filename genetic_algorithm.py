@@ -47,6 +47,8 @@ class GeneticAlgorithm:
         ExperimentData = {'GAParameters':self.Parameters.ToParamDict(),'Runs':[]}
 
         self.OutputProcessor.Record(0, self.Population)
+        f = open(self.OutputFile, 'w')
+        f.write('{\n"ExperimentData":{},\n"RunData":{\n\t"Columns":["RunNumber","GenerationNumber","AvgFitness","BestFitness","StdevFitness"],\n\t"Data":[\n')
         RunData = []
         allRunsStats = Utilities.StatCalculator()
         allRunsStats.AddRecordsBatch(lambda x: x.GetRawFitness(), self.Population)
@@ -82,19 +84,19 @@ class GeneticAlgorithm:
                     generationStats.AddRecord(childObject2.GetRawFitness(), childObject2)
                     allRunsStats.AddRecord(childObject1.GetRawFitness(), childObject1)
                     allRunsStats.AddRecord(childObject2.GetRawFitness(), childObject2)
-
                     # end for each children loop
 
-                RunData.append( (runNo, currentGeneration) + generationStats.GetStats() )
+                _, genMin, _, genMax, _, genMean, genStdev = generationStats.GetStats()
+                RunData.append( (runNo, currentGeneration, genMin, genMax, genMean, genStdev) )
                 self.Population = newPopulation
-
             # end of generations loop
         # end of runs loop
-        df = pd.DataFrame(RunData,columns=['RunNo','GenerationNumber','NumberOfSamples','Min','MinIndex','Max','MaxIndex','Mean','Stdev'])
-        df.to_csv('Test.csv')
+        df = pd.DataFrame(RunData,columns=['RunNo','GenerationNumber','Min','Max','Mean','Stdev'])
+        df.to_csv('ga__runData.csv')
         minChromObj = allRunsStats.GetMinObject()
         maxChromObj = allRunsStats.GetMaxObject()
         print('Min Fitness: ' + str(minChromObj.GetRawFitness()))
         print(minChromObj.GetChromosome())
         print('Max Fitness: ' + str(maxChromObj.GetRawFitness()))
         print(maxChromObj.GetChromosome())
+        f.close()

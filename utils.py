@@ -24,10 +24,10 @@ class Utilities:
                 maxidx = i
             vSum += v
             vSumOfSquares += (v * v)
-        vmean = (vSum / n)
-        vvar = (vSumOfSquares / n) - (vmean * vmean)
-        vstdev = math.sqrt(vvar)
-        return vMin, vMinIdx, vMax, vMaxIdx, vmean, vstdev
+        vMean = (vSum / n)
+        vVar = (vSumOfSquares / n) - (vMean * vMean)
+        vStdev = math.sqrt(vVar)
+        return vMin, vMinIdx, vMax, vMaxIdx, vMean, vStdev
 
     class StatCalculator:
         def __init__(self):
@@ -60,10 +60,10 @@ class Utilities:
         def GetStats(self):
             if self.NumOfSamples <= 0:
                 raise NoSamplesGatheredError
-            mean = self.Sum / self.NumOfSamples
-            var = (self.SumOfSquares / self.NumOfSamples) - (mean * mean)
-            stdev = math.sqrt(var)
-            return self.NumOfSamples, self.Min, self.MinObject, self.Max, self.MaxObject, mean, stdev
+            Mean = self.Sum / self.NumOfSamples
+            Var = (self.SumOfSquares / self.NumOfSamples) - (Mean * Mean)
+            Stdev = math.sqrt(Var)
+            return self.NumOfSamples, self.Min, self.MinObject, self.Max, self.MaxObject, Mean, Stdev
 
         def GetMinObject(self):
             return self.MinObject

@@ -73,7 +73,7 @@ def main():
     fmutOp = FlipMutation(0.001)
     opxover = OnePointCrossover()
     s = GenotypeModel(chromCreator, omf, fmutOp, opxover)
-    p = {'NumRuns':5,'PopSize':50,'NumGenerations':180,'XoverProb':0.8,'OutputFile':'GAOutput.txt'}
+    p = {'NumRuns':5,'PopSize':50,'NumGenerations':180,'XoverProb':0.8,'OutputFile':'TestGAOutput.json'}
     ga = GeneticAlgorithm(s,p)
     ss = TournamentOfTwoSelection(ga, 1.0)
     ga.SetSelectionStrategy(ss)
