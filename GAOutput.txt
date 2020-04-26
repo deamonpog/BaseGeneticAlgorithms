@@ -1,2 +1,0 @@
-GenNo,AvgRawFitness
-0,99.84
