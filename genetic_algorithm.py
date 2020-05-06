@@ -1,5 +1,5 @@
 from random_number_generator import RandomNumberGenerator as RNG
-from output_processor import OutputProcessor
+from output_writer import OutputWriter
 from utils import Utilities
 import json
 
@@ -32,7 +32,7 @@ class GeneticAlgorithm:
         self.TheGenotypeModel = in_GenotypeModel
         self.Parameters = GeneticAlgorithm.Parameters(in_ParameterDict)
         self.TheSelectionStrategy = None
-        self.OutputProcessor = OutputProcessor(self.Parameters.OutputFile)
+        self.TheOutputWriter = OutputWriter(self.Parameters.OutputFile)
         self.Population = [] # population doesn't really belong here, should be moved to a run class? --> move to a data class instance
 
     def SelectRandomChromosomeObject(self):
@@ -46,18 +46,18 @@ class GeneticAlgorithm:
         self.Population = [ self.TheGenotypeModel.CreateRandomizedChromosomeObject() for i in range(self.Parameters.PopSize) ]
         ExperimentData = {'GAParameters':self.Parameters.ToDict(),'Runs':[]}
 
-        self.OutputProcessor.Record(0, self.Population)
-        f = open(self.Parameters.OutputFile, 'w')
-        f.write('{\n"ExperimentData":' + json.dumps(self.Parameters.ToDict()) + ',\n"RunData":{\n\t"Columns":["RunNumber","GenerationNumber","AvgFitness","BestFitness","StdevFitness"],\n\t"Data":[\n')
-        RunData = []
-        allRunsStats = Utilities.StatCalculator()
+        #self.OutputProcessor.Record(0, self.Population)
+        self.TheOutputWriter.Initialize(json.dumps(self.Parameters.ToDict()))
+        #RunData = []
+        allRunsStats = Utilities.MinMaxCalculator()
         allRunsStats.AddRecordsBatch(lambda x: x.GetRawFitness(), self.Population)
 
         # Main Loop of Generations
         for runNo in range(self.Parameters.NumberOfRuns):
+            generationStats = Utilities.StatCalculator()
             for currentGeneration in range(self.Parameters.NumGenerations):
                 newPopulation = []
-                generationStats = Utilities.StatCalculator()
+                generationStats.Reset()
                 for pairs in range(self.Parameters.ChildrenPerGeneration // 2):
                     # Selection of Parents
                     parentObject1 = self.TheSelectionStrategy.SelectChromosomeObject()
@@ -80,26 +80,24 @@ class GeneticAlgorithm:
                     newPopulation.append(childObject1)
                     newPopulation.append(childObject2)
 
+                    # record stats of these children for this generation
                     generationStats.AddRecord(childObject1.GetRawFitness(), childObject1)
                     generationStats.AddRecord(childObject2.GetRawFitness(), childObject2)
                     allRunsStats.AddRecord(childObject1.GetRawFitness(), childObject1)
                     allRunsStats.AddRecord(childObject2.GetRawFitness(), childObject2)
                     # end for each children loop
 
+                # generate summary for this generation
                 _, genMin, _, genMax, _, genMean, genStdev = generationStats.GetStats()
-                RunData.append( (runNo, currentGeneration, genMin, genMax, genMean, genStdev) )
+                #RunData.append( (runNo, currentGeneration, genMin, genMax, genMean, genStdev) )
+                self.TheOutputWriter.CollectData(runNo, currentGeneration, genMin, genMax, genMean, genStdev)
                 self.Population = newPopulation
             # end of generations loop
         # end of runs loop
-        for data in RunData[:-1]:
-            f.write('\t\t\t[{},{},{},{},{}],\n'.format(data[0],data[1],data[2],data[3],data[4],data[5]))
-        data = RunData[-1]
-        f.write('\t\t\t[{},{},{},{},{}]\n'.format(data[0],data[1],data[2],data[3],data[4],data[5]))
+        self.TheOutputWriter.WriteSummary(allRunsStats)
         minChromObj = allRunsStats.GetMinObject()
         maxChromObj = allRunsStats.GetMaxObject()
         print('Min Fitness: ' + str(minChromObj.GetRawFitness()))
         print(minChromObj.GetChromosome())
         print('Max Fitness: ' + str(maxChromObj.GetRawFitness()))
         print(maxChromObj.GetChromosome())
-        f.write('\t\t]\n\t}},\n"Summary":{{\n\t"OverallMinFitness":{},\n\t"OverallMaxChromosome":{},\n\t"OverallMaxFitness":{},\n\t"OverallMinChromosome":{}\n\t}}\n}}\n'.format(minChromObj.GetRawFitness(),minChromObj.GetChromosome(),maxChromObj.GetRawFitness(),maxChromObj.GetChromosome()))
-        f.close()
