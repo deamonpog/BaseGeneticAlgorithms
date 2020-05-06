@@ -29,7 +29,7 @@ class Utilities:
         vStdev = math.sqrt(vVar)
         return vMin, vMinIdx, vMax, vMaxIdx, vMean, vStdev
 
-    class StatCalculator:
+    class MinMaxCalculator:
         def __init__(self):
             self.Reset()
 
@@ -38,18 +38,12 @@ class Utilities:
             self.MinObject = None
             self.Max = float('-inf')
             self.MaxObject = None
-            self.Sum = 0
-            self.SumOfSquares = 0
-            self.NumOfSamples = 0
 
         def AddRecordsBatch(self, in_ValueFunction, in_EnumerableObjects):
             for obj in in_EnumerableObjects:
                 self.AddRecord(in_ValueFunction(obj), obj)
 
         def AddRecord(self, in_Value, in_Object):
-            self.Sum += in_Value
-            self.SumOfSquares += (in_Value * in_Value) 
-            self.NumOfSamples += 1
             if in_Value < self.Min:
                 self.Min = in_Value
                 self.MinObject = in_Object
@@ -57,17 +51,40 @@ class Utilities:
                 self.Max = in_Value
                 self.MaxObject = in_Object
 
-        def GetStats(self):
-            if self.NumOfSamples <= 0:
-                raise NoSamplesGatheredError
-            Mean = self.Sum / self.NumOfSamples
-            Var = (self.SumOfSquares / self.NumOfSamples) - (Mean * Mean)
-            Stdev = math.sqrt(Var)
-            return self.NumOfSamples, self.Min, self.MinObject, self.Max, self.MaxObject, Mean, Stdev
+        def GetMin(self):
+            return self.Min
+
+        def GetMax(self):
+            return self.Max
 
         def GetMinObject(self):
             return self.MinObject
 
         def GetMaxObject(self):
             return self.MaxObject
+
+    class StatCalculator(MinMaxCalculator):
+        def __init__(self):
+            super().__init__()
+
+        def Reset(self):
+            super().Reset()
+            self.Sum = 0
+            self.SumOfSquares = 0
+            self.NumOfSamples = 0
+
+        def AddRecord(self, in_Value, in_Object):
+            super().AddRecord(in_Value, in_Object)
+            self.Sum += in_Value
+            self.SumOfSquares += (in_Value * in_Value) 
+            self.NumOfSamples += 1
+
+        def GetStats(self):
+            if self.NumOfSamples <= 0:
+                raise NoSamplesGatheredError
+            Mean = self.Sum / self.NumOfSamples
+            Var = (self.SumOfSquares / self.NumOfSamples) - (Mean * Mean)
+            Stdev = math.sqrt(Var)
+            return (self.NumOfSamples, self.Min, self.MinObject, self.Max, self.MaxObject, Mean, Stdev)
+
 
